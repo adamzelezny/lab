@@ -3,6 +3,7 @@ from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
 
 def load_matrices(file1, file2):
     matrix1 = np.loadtxt(file1, delimiter=",")
@@ -68,11 +69,11 @@ def ks_test(matrix1, matrix2):
     return significant_cols
 
 
-#adversarial validation
+#random forest
 
-def adversarial_validation(matrix1, matrix2):
+def random_forest(matrix1, matrix2):
 
-    print("=== Adversarial Validation ===")
+    print("Random forest")
 
     X = np.vstack((matrix1, matrix2))
 
@@ -103,13 +104,63 @@ def adversarial_validation(matrix1, matrix2):
     print(f"Accuracy: {accuracy*100:.1f}%")
 
     if accuracy <= 0.60:
-        print("Conclusion: datasets are mostly the same.")
+        print("Conclusion: datasets are significantly similar.")
+    elif accuracy <= 0.75:
+        print("Conclusion: datasets are similar.")
     else:
         print("Conclusion: datasets are mostly different.")
 
     print()
 
     return clf
+
+
+#xgboost
+
+def xgboost(matrix1, matrix2):
+
+    print("XGBoost")
+
+    X = np.vstack((matrix1, matrix2))
+
+    y = np.concatenate((
+        np.zeros(matrix1.shape[0]),
+        np.ones(matrix2.shape[0])
+    ))
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.5,
+        random_state=42,
+        stratify=y
+    )
+
+    clf = XGBClassifier(
+        n_estimators=50,
+        random_state=42,
+        eval_metric="logloss"
+    )
+
+    clf.fit(X_train, y_train)
+
+    predictions = clf.predict(X_test)
+
+    accuracy = accuracy_score(y_test, predictions)
+
+    print(f"Accuracy: {accuracy*100:.1f}%")
+
+    if accuracy <= 0.60:
+        print("Conclusion: datasets are significantly similar.")
+    elif accuracy <= 0.75:
+        print("Conclusion: datasets are similar.")
+    else:
+        print("Conclusion: datasets are mostly different.")
+
+    print()
+
+    return clf
+
 
 def main():
 
@@ -122,7 +173,9 @@ def main():
 
     ks_test(matrix1, matrix2)
 
-    adversarial_validation(matrix1, matrix2)
+    random_forest(matrix1, matrix2)
+
+    xgboost(matrix1, matrix2)
 
 
 if __name__ == "__main__":
