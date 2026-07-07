@@ -5,3 +5,7 @@
 .venv-wsl/
 *-Copy*
 * - Copy*
+*.tsv
+*.mtx
+cache/
+*.h5ad
