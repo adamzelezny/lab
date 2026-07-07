@@ -33,30 +33,55 @@ def create_mouse_brain_rna_dataset(
         is_astrocyte = np.random.rand() < 0.35  # 35% astrocytes
         labels.append(int(is_astrocyte))
 
+        # Determine sub-celltype if not astrocyte
+        if not is_astrocyte:
+            # 50% neurons, 35% oligodendrocytes, 15% microglia
+            other_type = np.random.choice(["neuron", "oligodendrocyte", "microglia"], p=[0.5, 0.35, 0.15])
+        else:
+            other_type = "astrocyte"
+
         counts = {}
+        # Cell-specific library size scaling factor (sequencing depth variation)
+        depth_scale = np.random.lognormal(mean=0, sigma=0.25)
 
         for gene in genes:
+            # Base expression level (lambda) depending on the actual cell type
             if gene in ["Gfap", "Aqp4", "Aldh1l1", "Slc1a3", "S100b"]:
-                # Astrocyte genes high in astrocytes, low otherwise
-                lam = np.random.uniform(80, 250) if is_astrocyte else np.random.uniform(1, 20)
+                # Astrocyte markers
+                lam = np.random.uniform(25, 70) if is_astrocyte else np.random.uniform(2, 12)
 
             elif gene in ["Snap25", "Rbfox3", "Map2", "Syt1", "Tubb3"]:
-                # Neuron genes high in non-astrocytes
-                lam = np.random.uniform(5, 25) if is_astrocyte else np.random.uniform(60, 200)
+                # Neuron markers
+                lam = np.random.uniform(25, 70) if other_type == "neuron" else np.random.uniform(2, 12)
 
             elif gene in ["Mbp", "Mog", "Plp1", "Cnp", "Olig2"]:
-                # Oligodendrocyte genes mostly non-astrocyte
-                lam = np.random.uniform(2, 20) if is_astrocyte else np.random.uniform(40, 160)
+                # Oligodendrocyte markers
+                lam = np.random.uniform(25, 70) if other_type == "oligodendrocyte" else np.random.uniform(2, 12)
 
             elif gene in ["Cx3cr1", "P2ry12", "Tmem119", "Aif1", "Csf1r"]:
-                # Microglia genes mostly non-astrocyte
-                lam = np.random.uniform(2, 15) if is_astrocyte else np.random.uniform(30, 140)
+                # Microglia markers
+                lam = np.random.uniform(25, 70) if other_type == "microglia" else np.random.uniform(2, 12)
 
             else:
-                # Housekeeping/noisy genes
-                lam = np.random.uniform(20, 100)
+                # Housekeeping genes (expressed in all cells but with noise)
+                lam = np.random.uniform(15, 45)
 
-            counts[gene] = np.random.poisson(lam)
+            # 1. Biological Overdispersion (Gamma-Poisson / Negative Binomial)
+            # Use Gamma to draw a cell-gene specific rate, then Poisson
+            dispersion = 1.5
+            cell_gene_lam = np.random.gamma(shape=max(0.1, lam) / dispersion, scale=dispersion)
+            
+            # 2. Sequencing depth scale
+            cell_gene_lam *= depth_scale
+
+            count = np.random.poisson(cell_gene_lam)
+
+            # 3. Dropout (zero-inflation) - probability of dropout decreases with expression level
+            p_dropout = np.exp(-0.15 * count)
+            if np.random.rand() < p_dropout:
+                count = 0
+
+            counts[gene] = count
 
         rows.append(counts)
 
