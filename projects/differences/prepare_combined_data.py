@@ -138,14 +138,14 @@ def main() -> None:
     annotate_cell_metadata(
         dataset=control_dataset,
         condition="control",
-        mouse_id="mouse_A",
+        mouse_id="mouse_1",
         timepoint="pre_activation",
         source_folder="Control"
     )
     annotate_cell_metadata(
         dataset=activity_dataset,
         condition="activity",
-        mouse_id="mouse_A",
+        mouse_id="mouse_2",
         timepoint="post_activation",
         source_folder="Activity"
     )
