@@ -55,7 +55,7 @@ def train_and_explain(adata: sc.AnnData, mask: np.ndarray, pop_name: str, out_di
     )
     
     rf = RandomForestClassifier(
-        n_estimators=100, class_weight='balanced', random_state=42, n_jobs=-1
+        n_estimators=100, max_depth=10, class_weight='balanced', random_state=42, n_jobs=-1
     )
     rf.fit(X_train, y_train)
     
@@ -74,8 +74,14 @@ def train_and_explain(adata: sc.AnnData, mask: np.ndarray, pop_name: str, out_di
     plt.close()
     
     print("Calculating SHAP values...")
+    max_shap_samples = 200
+    if len(X_test) > max_shap_samples:
+        X_test_sub = X_test.sample(n=max_shap_samples, random_state=42)
+    else:
+        X_test_sub = X_test
+        
     explainer = shap.TreeExplainer(rf)
-    shap_values = explainer(X_test)
+    shap_values = explainer(X_test_sub)
     
     top_drivers = {}
     
