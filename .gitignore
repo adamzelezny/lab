@@ -9,3 +9,4 @@
 *.mtx
 cache/
 *.h5ad
+*.txt
