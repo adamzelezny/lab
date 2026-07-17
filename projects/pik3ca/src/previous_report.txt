@@ -1,0 +1,347 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\setstretch{1.2}
+
+\title{\textbf{Research Progress Report}\\
+Single-Cell Transcriptomic Analysis of Activity-Associated Changes in the Brain Tumor Microenvironment}
+\author{Adam Železný}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\maketitle
+
+\pagenumbering{roman}
+
+\tableofcontents
+\newpage
+
+\pagenumbering{arabic}
+
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+This project investigated whether increased neuronal activity is associated with changes in the cellular composition and gene expression programs of the glioma tumor microenvironment using single-cell RNA sequencing (scRNA-seq). A computational analysis pipeline was developed to process raw sequencing data from control and activity-treated mouse brain samples, enabling identification of cell populations, transcriptional programs, and candidate molecular clusters associated with neuronal activation.
+
+The analysis identified substantial differences between the two samples, particularly within the microglial compartment. Cell clustering and annotation revealed a distinct activated microglial population that was almost exclusively present in the activity-treated sample and expressed genes associated with inflammation, glioma progression, and tissue remodeling. Additional changes included shifts in the abundance of multiple immune cell populations, suggesting broad remodeling of the tumor immune microenvironment following neuronal activation.
+
+To further characterize these differences, a machine learning classifier was trained to distinguish control and activity-associated microglia. The model achieved approximately 99.8\% classification accuracy, indicating non-subtle differences between the two datasets. Feature importance analysis (SHAP) identified antigen presentation (MHC-II), interferon signaling, and microglial activation pathways as the principal molecular programs responsible for this separation.
+
+A key limitation of the study is the experimental design, each condition was represented by a single mouse, making it impossible to confidently distinguish treatment effects from inter-animal biological variation. Consequently, the findings should be interpreted as hypotheses rather than fool proof evidence of neuronal activity-induced changes.
+
+Overall, the work establishes a computational framework for single-cell transcriptomic analysis of the glioma microenvironment and identifies several candidate cell populations, genes, and biological pathways for validation in future projects with larger numbers of biological replicates.
+
+\section{Project Objective}
+
+The objective of this project is to determine whether increased neuronal activity is associated with changes in the cellular composition and transcriptional programs of the glioma microenvironment.
+
+The available data consisted of two single-cell RNA sequencing (scRNA-seq) datasets:
+
+\begin{itemize}
+\item Mouse pre-neural activation
+\item Mouse post-neural activation
+\end{itemize}
+
+\vspace{0.3cm}
+
+The computational pipeline was designed to progressively transform raw sequencing counts into biologically interpretable cell populations, transcriptional programs, and candidate genes.
+
+\section{Initial Data Exploration}
+
+The datasets contained approximately:
+
+\begin{itemize}
+\item 14,258 cells (Control)
+\item 27,800 cells (Activity)
+\item 33,696 measured genes
+\end{itemize}
+
+Inspection of the raw count matrices confirmed the expected characteristics of scRNA-seq data:
+
+\begin{itemize}
+\item extremely sparse expression matrices (roughly 93\% zeros),
+\item variable sequencing depth,
+\item large differences in total RNA counts between individual cells.
+\end{itemize}
+
+These observations made extensive data preprocessing necessary before any biological comparison could be performed.
+
+\section{Experimental Limitations}
+
+A critical limitation became apparent during interpretation.
+
+Because scRNA-seq requires tissue dissociation, both datasets originate from separate animals rather than repeated sampling of the same mouse.
+
+Therefore,
+
+\begin{itemize}
+\item Control = one mouse
+\item Activity = one mouse
+\end{itemize}
+
+This design provides one biological replicate per condition.
+
+Consequently, treatment effects cannot be statistically separated from mouse-specific biological variation.
+
+Throughout this report, observed differences should therefore be interpreted as candidate activity-associated signatures rather than definitive effects of neuronal activation.
+
+Validation across additional mice will be required before causal conclusions can be drawn.
+
+
+\section{Quality Control and Normalization}
+
+The first computational stage focused on removing technical sources of variation.
+
+Cells with poor sequencing quality, abnormal RNA content, or other quality-control failures were removed according to standard scRNA-seq preprocessing practices.
+
+Expression values were then normalized to account for differences in sequencing depth between cells.
+
+This normalization step is critical because raw RNA counts cannot be compared directly. A cell containing twice as many sequenced transcripts is not necessarily twice as biologically active, it may simply have been sequenced more deeply.
+
+After normalization, logarithm transformation was applied to stabilize the variance and reduce the influence of highly expressed genes.
+
+At this stage, expression values became directly comparable across cells.
+
+\section{Feature Selection}
+
+Although nearly 34,000 genes were measured, the majority exhibit little variation between cells and therefore contribute primarily to technical noise.
+
+To focus the analysis on biologically informative signals, highly variable genes (HVGs) were identified.
+
+Approximately 3,000 HVGs were retained for all downstream analyses.
+
+This reduced computational complexity while enriching the dataset for genes most likely to distinguish different cell populations or activation states.
+
+\section{Dimensionality Reduction}
+
+Even after feature selection, each cell remained represented by approximately 3,000 expression measurements.
+
+Principal Component Analysis (PCA) was therefore used to summarize the dominant transcriptional patterns.
+
+Principal Component Analysis (PCA) is a statistical technique used to transform high-dimensional data into a lower-dimensional representation, thereby simplifying the data while preserving as much of its variance as possible. It achieves this by projecting the data onto a new coordinate system, where the directions of greatest variance are identified as the principal components. In our case, this transformation can be mathematically represented as
+
+\[
+T : \mathbb{R}^{3000} \rightarrow \mathbb{R}^{50}.
+\]
+
+\section{Construction of the Cell Similarity Graph}
+
+Using the PCA representation, a nearest-neighbor graph was constructed.
+
+Unlike with spatial datasets, this graph does not represent physical proximity between cells.
+
+Instead, edges connect cells with similar profiles, as measured by the Euclidian distance of the respective feature vectors.
+
+\begin{itemize}
+\item nodes represent individual cells,
+\item edges represent transcriptional similarity.
+\end{itemize}
+
+
+Both clustering and visualization were derived from this graph.
+
+\section{Visualization and Clustering}
+
+UMAP was used to generate a two-dimensional visualization of the high-dimensional data space.
+
+The purpose of UMAP is visual, nearby cells on the UMAP possess similar expression profiles, although the axes themselves have no biological interpretation as the transformation is non-linear.
+
+Leiden community detection was then applied to the same nearest-neighbor graph.
+
+The Leiden algorithm works by grouping cells that are more strongly connected to one another than to the rest of the graph. It repeatedly refines these groups to improve the quality of the clustering, resulting in clusters of cells with similar transcriptional profiles.
+
+Several clustering resolutions were tried.
+
+Lower resolutions merged biologically distinct populations, whereas higher resolutions fragmented coherent populations into excessively small clusters.
+
+A resolution of 0.5 produced 25 clusters and was selected as a reasonable balance between biological specificity and interpretability.
+
+\section{Cell Type Annotation}
+
+Each Leiden cluster was biologically annotated using marker gene analysis.
+
+For every cluster, a Wilcoxon rank-sum test identified genes significantly enriched relative to all remaining cells.
+
+The Wilcoxon rank-sum test works by comparing the expression levels of each gene in one cluster against its expression levels in all other cells. It ranks the expression values and tests whether a gene tends to have higher ranks in that cluster. Genes with significantly higher expression are considered candidate marker genes for that cluster.
+
+Known (looked-up) markers were then used to assign biological identities.
+
+Major identified populations included:
+
+\begin{itemize}
+\item Homeostatic microglia (P2ry12, Cx3cr1, Hexb)
+\item Activated microglia (Apoe, Trem2, Tyrobp, Ctsd)
+\item Mature oligodendrocytes (Plp1, Mog)
+\item Oligodendrocyte precursor cells (Ptprz1, Olig1)
+\item Newly myelinating oligodendrocytes (Bcas1)
+\item Astrocytes (Slc1a2, Aldoc)
+\item T lymphocytes (Cd3d, Cd3g)
+\item B lymphocytes (Igkc, Cd79a)
+\item Endothelial cells (Flt1)
+\item Pericytes / smooth muscle cells (Acta2)
+\end{itemize}
+
+These annotations transformed computational clusters into recognizable biological cell populations.
+
+\section{Observed Changes in Cellular Composition}
+
+Once clusters had been annotated, their relative abundance was compared between the two samples.
+
+A few relevant differences were seen:
+
+\subsection*{Activated Microglia}
+
+One of the most notable observations was Leiden Cluster 16.
+
+This cluster contained
+
+\begin{itemize}
+\item 7,865 cells from the activity sample,
+\item only 4 cells from the control sample.
+\end{itemize}
+
+Marker genes included
+
+\begin{center}
+Apoe, Trem2, Tyrobp, Cd83, Ctsd.
+\end{center}
+
+These genes are characteristic of activated microglial states frequently associated with glioma, neuroinflammation, and tissue remodeling.
+
+This cluster therefore represents a strong candidate activity-associated microglial population.
+
+\subsection*{Global Immune Landscape}
+
+Comparison of annotated populations suggested changes of the immune compartment.
+
+Among the observed changes:
+
+\begin{itemize}
+\item dramatic expansion of activated microglia,
+\item increase in homeostatic microglia,
+\item marked reduction of MHC-II enriched microglial populations,
+\item near disappearance of T-cell populations in the activity-treated sample.
+\end{itemize}
+
+These observations collectively suggest a hypothesis that the activity-treated sample occupies a different immune state than the control sample.
+
+\section{Machine Learning Analysis}
+
+The key trick of the project is to use a machine learning classifier to measure differences between two datasets. If the classifier is successful in its predictions, we can confidently assume there are non-subtle differences in the data as the classifier would not be able to successfully distinguish two extremely similar datasets, much like you would not be able to tell two identical twins apart with a satisfying success rate. 
+
+To avoid having the classifier be trained on differences between the actual cell identities and not the datasets, it is only trained on a subset of the cells, which I have chosen to be the most promising looking cluster microglia.
+
+The classifier therefore attempted to distinguish
+
+\begin{itemize}
+\item control microglia
+\item activity microglia
+\end{itemize}
+
+using expression values from the approximately 3,000 highly variable genes.
+
+The resulting classifier achieved an accuracy approaching 99.8\%.
+
+This extremely high performance indicates that microglial transcriptional states differed profoundly between the two analyzed samples. 
+
+Again, it is worth noting that it is impossible to confidently judge whether these differences are caused by the actual neural activation or solely by the differences in the two mice.
+
+Because only one biological replicate was available per condition, this accuracy should be interpreted as demonstrating strong separation between the two datasets rather than definitive treatment-specific prediction.
+
+\section{SHAP Feature Analysis}
+
+Although Random Forest models can accurately classify cells, they do not directly explain which genes drive those predictions.
+
+To address this, SHAP (SHapley Additive exPlanations) was used to quantify each gene's contribution to classifier decisions.
+
+SHAP generated a ranked list of genes most responsible for distinguishing the two transcriptional states.
+
+\subsection*{Antigen Presentation}
+
+The strongest SHAP features were
+
+\begin{itemize}
+\item H2-Aa
+\item H2-Ab1
+\item Cd74
+\item H2-Eb1
+\end{itemize}
+
+These genes comprise the MHC-II antigen presentation machinery.
+
+Their prominence independently supports the earlier clustering observation that MHC-II-enriched microglial populations differ substantially between the two samples.
+
+\subsection*{Interferon-Associated Program}
+
+A second highly ranked module consisted of
+
+\begin{itemize}
+\item Iigp1
+\item Gbp2
+\item Gbp2b
+\item Igtp
+\item Ifitm3
+\item Irf7
+\end{itemize}
+
+These genes represent a coordinated transcriptional program that responds to interferons.
+
+Although the upstream biological trigger cannot be determined from the present dataset alone, this pathway emerged consistently as one of the strongest molecular signatures separating the two samples.
+
+\subsection*{Microglial Identity and Activation}
+
+Several classical microglial genes also ranked highly, including
+
+\begin{itemize}
+\item P2ry12
+\item Gpr34
+\item Fcrls
+\item Hexb
+\item Ctsd
+\item Cst3
+\item Jun
+\end{itemize}
+    
+These genes further support the conclusion that the principal biological differences occur within the microglial compartment.
+
+\section{Biological Interpretation}
+
+Multiple independent analyses agreed on similar biological hypotheses.
+
+Leiden clustering identified a previously unrecognized activated microglial population almost exclusively present in the activity-treated sample.
+
+Cell composition analysis revealed substantial restructuring of immune cell populations.
+
+Machine learning independently demonstrated that the transcriptional profiles of microglia from the two samples were highly separable.
+
+Finally, SHAP highlighted coherent biological pathways, particularly antigen presentation, interferon signaling, and microglial activation, as the dominant molecular programs distinguishing the two conditions.
+
+
+
+\section{Conclusions}
+
+This work established a computational framework for analyzing single-cell transcriptomic alterations associated with neuronal activity.
+
+The most prominent findings include:
+
+\begin{itemize}
+\item discovery of an activated microglial cluster (Cluster 16) overwhelmingly enriched in the activity-treated sample,
+\item substantial restructuring of the microglial compartment,
+\item marked alterations in antigen presentation programs,
+\item strong interferon-associated transcriptional signatures,
+\item machine learning identification of a compact set of candidate genes driving separation between the two samples.
+\end{itemize}
+
+These observations have created a set of hypotheses for future validation with a larger sample size.
+
+\end{document}

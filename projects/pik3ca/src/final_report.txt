@@ -1,0 +1,172 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\setstretch{1.2}
+
+\title{\textbf{Research Progress Report}\\
+Differential Microenvironmental Remodeling by Oncogenic PIK3CA Variants: Synaptic Wiring versus Actomyosin Biomechanics}
+\author{Adam Železný}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\pagenumbering{roman}
+
+\tableofcontents
+\newpage
+
+\pagenumbering{arabic}
+
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+This project investigated whether different oncogenic mutations in the phosphatidylinositol 3-kinase catalytic subunit alpha (\textit{PIK3CA}) gene drive distinct modes of pathology in the brain tumor microenvironment. Using single-cell RNA sequencing (scRNA-seq), we analyzed mouse brain cohorts carrying the helical-domain mutation \textit{C420R}, the kinase-domain mutation \textit{H1047R}, and the control non-activating variant \textit{R88Q}. A multi-method computational pipeline was developed, combining linear pseudobulk pathway enrichment (GSEA) and non-linear cell-level machine learning (Random Forest and SHAP) to isolate and compare the transcriptional profiles of malignant glioblastoma cells and host neurons.
+
+The results suggest a novel dual-mechanism hypothesis for brain-tumor interactions:
+\begin{itemize}
+\item \textbf{Hypothesis 1 (The H1047R Synaptic Axis)}: The kinase-domain mutant \textit{H1047R} is hypothesized to engage an electrically active program, physically wiring itself into the neural network via synaptogenesis and glutamate accumulation, which forces host neurons into excitotoxic hyperactivity and subsequent metabolic collapse.
+\item \textbf{Hypothesis 2 (The C420R Biomechanical Axis)}: The helical-domain mutant \textit{C420R} is hypothesized to engage a mechanically active program, utilizing actomyosin contractile machinery to physically crawl and compress brain tissue, resulting in cytoskeletal remodeling of host neurons and local blood-brain barrier disruption.
+\end{itemize}
+
+Crucially, these hypotheses are supported by the independent convergence of our GSEA and machine learning results. While GSEA resolved these changes at the pathway level, single-cell SHAP feature analysis independently identified individual driver genes—including the glutamate transporter \textit{Slc1a2} in tumors, activity-regulated genes \textit{Egr1} and \textit{Fos} in neurons, and actin-binding proteins \textit{Tmsb4x} and \textit{Csrp1}—that map precisely to the same biological models. These findings outline a potential framework for mutation-specific therapeutic targeting in glioblastoma.
+
+\section{Project Objective}
+
+The objective of this project is to determine whether helical-domain (\textit{C420R}) and kinase-domain (\textit{H1047R}) mutations in the \textit{PIK3CA} oncogene drive brain pathology through distinct, mutation-specific modes of interaction with the neural microenvironment.
+
+The available datasets consisted of single-cell RNA sequencing (scRNA-seq) matrices from mouse brains across three genotypes:
+\begin{itemize}
+\item Control non-activating variant (\textit{R88Q})
+\item Helical-domain active variant (\textit{C420R})
+\item Kinase-domain active variant (\textit{H1047R})
+\end{itemize}
+
+The analysis was structured chronologically as a pipeline designed to filter out dead cells, identify stable spatial compartments, isolate malignant glioblastoma and neuronal cells, and evaluate their transcription profiles using complementary statistical and machine learning models.
+
+\section{Initial Data Exploration and Quality Control}
+
+The raw consolidated dataset contained approximately $161,702$ cells. Initial inspection of the raw count matrices confirmed high sparsity and variable sequencing depth across cells. 
+
+To remove low-quality and dying cells, we calculated the percentage of mitochondrial reads (\textit{pct\_counts\_mt}) for each cell. Cells with high mitochondrial counts represent ruptured cells where cytoplasmic RNA has leaked out, leaving a high concentration of mitochondrial transcripts. A strict quality control filter was applied:
+\begin{itemize}
+\item Cells with fewer than 500 total counts were removed.
+\item Cells with a mitochondrial read percentage $\ge 10.0\%$ were removed.
+\end{itemize}
+
+This quality control step resulted in the removal of $28,504$ damaged cells, retaining a high-quality dataset of $133,198$ cells. Expression values were then normalized to a target sum of $10,000$ (Counts Per Ten Thousand, CPM-like) to account for differences in sequencing depth, followed by a logarithm transformation ($log1p$) to stabilize variance.
+
+\section{Feature Selection and Dimensionality Reduction}
+
+To focus downstream steps on informative biological variation and reduce technical noise, highly variable genes (HVGs) were identified based on their dispersion. The top $2,000$ HVGs were retained for downstream analysis.
+
+Even after feature selection, each cell was represented by $2,000$ measurements. Principal Component Analysis (PCA) was therefore applied to reduce the dimensionality of the dataset, transforming the expression vectors into a lower-dimensional coordinate system while preserving maximum variance. The top $50$ principal components were calculated, mathematically represented as:
+\[
+T : \mathbb{R}^{2000} \rightarrow \mathbb{R}^{50}
+\]
+
+\section{Clustering and Population Isolation}
+
+Rather than constructing a similarity graph or using graph-based community detection (such as the Leiden algorithm), we partitioned the cells by clustering the raw numerical PCA coordinates directly. 
+
+To group cells with similar transcriptomic profiles, K-Means clustering ($K=6$) was applied directly to the 50-dimensional PCA space ($X\_pca$) using Euclidean distance. To isolate the direct interface between the glioblastoma cells and the healthy host brain cells, marker gene expression was evaluated across the resulting six clusters. 
+
+K-Means cluster profiling identified Cluster 2 as the key tumor-neuron interface, containing a high density of both glial-positive and neuronal-positive cells. We separated the cells in this interface into two purified populations for downstream differential analyses:
+\begin{itemize}
+\item \textbf{Malignant Tumor Cells}: Cluster 2 cells expressing glial/tumor markers (\textit{Gfap} or \textit{Gpc3} expression $> 0$) but lacking the neuronal marker \textit{Map2} (expression $= 0$).
+\item \textbf{Host Neurons}: Cells expressing the neuronal marker \textit{Map2} ($> 0$) but lacking the glial marker \textit{Gfap} ($= 0$) across the dataset.
+\end{itemize}
+
+This population isolation step ensured that downstream analyses evaluated clean, unmixed cell populations.
+
+\section{Linear Pseudobulk Pathway Analysis (GSEA)}
+
+To identify average pathway-level alterations across biological replicates, individual cell counts were aggregated into sample-level "pseudobulk" matrices (10 replicates total). Differential expression was modeled using \texttt{PyDESeq2}'s negative binomial Generalized Linear Model (GLM). The genes were ranked by their Wald statistic and analyzed using GSEA against the Gene Ontology (GO) Biological Process database.
+
+The GSEA results suggest two highly distinct, variant-specific microenvironmental interaction hypotheses:
+
+\subsection*{Hypothesis 1: H1047R Upregulates Synaptogenesis and Collapses Neuronal Respiration}
+We hypothesize that \textit{H1047R} tumor cells establish direct, active synaptic wiring with neighboring neurons. This is supported by GSEA of the malignant cells (H1047R vs. R88Q Control), which shows significant enrichment of synaptic adhesion and signaling pathways:
+\begin{itemize}
+\item Cell-Cell Adhesion Via Plasma-Membrane Adhesion Molecules (2.31 NES, FDR = 0.011)
+\item Modulation Of Chemical Synaptic Transmission (2.30 NES, FDR = 0.005)
+\item Synapse Organization (2.19 NES, FDR = 0.002)
+\end{itemize}
+
+This physical wiring is hypothesized to trigger excitotoxic over-activation in host neurons, causing a complete collapse of their energy grid. This is supported by GSEA of neurons (H1047R vs. C420R), which shows a massive downregulation of mitochondrial respiration and translation:
+\begin{itemize}
+\item Aerobic Respiration (-3.01 NES, FDR = 0.000)
+\item Oxidative Phosphorylation (-2.97 NES, FDR = 0.000)
+\item Proton Motive Force-Driven Mitochondrial ATP Synthesis (-2.82 NES, FDR = 0.000)
+\item Mitochondrial Translation (-2.61 NES, FDR = 0.000)
+\end{itemize}
+
+\subsection*{Hypothesis 2: C420R Hijacks Actomyosin Contractility and Drives Biomechanical Stress}
+Conversely, we hypothesize that \textit{C420R} tumor cells utilize actomyosin-driven mechanical force to crawl and compress brain tissue rather than building synapses. This is supported by GSEA of C420R malignant cells, which shows no synaptic enrichment but a strong activation of muscle-like contractile networks:
+\begin{itemize}
+\item Striated Muscle Contraction (2.81 NES, FDR = 0.000)
+\item Skeletal Muscle Contraction (2.59 NES, FDR = 0.000)
+\item Muscle Contraction (2.43 NES, FDR = 0.000)
+\item Myofibril Assembly (2.38 NES, FDR = 0.000)
+\end{itemize}
+
+The host neurons are hypothesized to undergo cytoskeletal remodeling to survive this physical pressure. This is supported by GSEA of neurons in the C420R cohort (C420R vs. R88Q), which shows upregulation of structural remodeling pathways and a severe downregulation of vascular tight junctions:
+\begin{itemize}
+\item Muscle Contraction (2.82 NES, FDR = 0.000)
+\item Myofibril Assembly (2.74 NES, FDR = 0.000)
+\item Striated Muscle Contraction (2.71 NES, FDR = 0.000)
+\item Maintenance Of Blood-Brain Barrier (-2.25 NES, FDR = 0.000)
+\end{itemize}
+
+\section{Non-Linear Single-Cell Machine Learning (SHAP)}
+
+To validate these GSEA hypotheses at the individual cell level, we trained Random Forest Classifiers to distinguish the three genotypes (\textit{R88Q}, \textit{C420R}, \textit{H1047R}) using the expression values of the top 2,000 HVGs. 
+
+The models achieved an overall classification accuracy of \textbf{78\%} for both malignant cells and neurons on the test sets, confirming that the cell-level transcriptional profiles are highly variant-specific. 
+
+To resolve which individual genes drove these predictions, we used \texttt{shap.TreeExplainer} to calculate Mean Absolute SHAP values on a representative test subsample (200 cells).
+
+\section{Methodological Independence and Convergence}
+
+It is critical to evaluate how the GSEA and machine learning analyses intersect. Although they share the same starting counts, they are mathematically independent:
+\begin{itemize}
+\item \textbf{Aggregation}: GSEA collapses cells into 10 replicate pools; the ML classifier evaluates thousands of individual cells.
+\item \textbf{Math}: GSEA fits a linear GLM; the Random Forest builds non-linear decision trees.
+\item \textbf{Prior Knowledge}: GSEA requires the human-curated Gene Ontology database; the ML + SHAP pipeline is database-free and identifies features based solely on mathematical prediction variance.
+\end{itemize}
+
+The fact that these two independent methods converge on the same genes and pathways provides powerful validation for our hypotheses.
+
+\subsection*{Convergence on the H1047R Synaptic Hypothesis}
+GSEA identified a positive synaptic transmission signature in H1047R glia. Independently, SHAP identified the glial glutamate transporter \textbf{\textit{Slc1a2} (Mean Abs SHAP = 0.0122)} as a top driver of the H1047R tumor state. GLT-1 (\textit{Slc1a2}) is the primary protein clearing glutamate from the synaptic cleft; its dysregulation supports the hypothesis that synaptic glutamate accumulation drives excitotoxicity.
+
+Furthermore, while GSEA showed respiration collapse in H1047R neurons, SHAP independently identified the immediate early genes \textbf{\textit{Egr1} (0.0079)} and \textbf{\textit{Fos} (0.0048)} as the top drivers of H1047R neurons. These are classic activity-regulated genes that spike during high-frequency firing, supporting the hypothesis that the neuronal respiration shutdown is caused by excitotoxic seizure activity.
+
+\subsection*{Convergence on the C420R Actomyosin Hypothesis}
+GSEA identified muscle-like contractile enrichment in C420R tumor cells. Independently, SHAP identified \textbf{\textit{Tmsb4x} (Mean Abs SHAP = 0.0052)} as the top driver of C420R glia. Thymosin Beta-4 (\textit{Tmsb4x}) is the primary intracellular protein organizing actin polymerization, supporting the hypothesis that the cell is constructing actin filaments to drive active mechanical crawling.
+
+Finally, while GSEA showed cytoskeletal remodeling in C420R neurons, SHAP independently identified the cytoskeletal organizer \textbf{\textit{Csrp1} (0.0047)} as the top driver of C420R neurons, confirming that the host cells are adapting structurally to physical compression.
+
+\section{Conclusions and Clinical Implications}
+
+Our computational synthesis suggests that \textit{PIK3CA} mutations in glioblastoma drive brain pathology through mutation-specific programs. 
+
+The \textit{H1047R} mutation appears to engage an electrically active program characterized by synaptic wiring and neuronal metabolic collapse. The \textit{C420R} mutation appears to engage a mechanically active program characterized by actomyosin contractility, tissue compression, and blood-brain barrier damage.
+
+These observations generate mutation-specific therapeutic hypotheses:
+\begin{itemize}
+\item \textbf{For H1047R Patients}: Treatments should combine antineoplastic therapies with anti-seizure medications and glutamate-receptor blockers (like AMPA/NMDA antagonists) to protect the brain's energy grid from collapse.
+\item \textbf{For C420R Patients}: Interventions should target cell motility and cytoskeletal remodeling (like myosin or focal adhesion kinase inhibitors) to block physical invasion and protect vessel tight junctions.
+\end{itemize}
+
+These findings establish a computational framework for analyzing variant-specific microenvironmental remodeling, creating a clear set of hypotheses for future experimental validation with a larger cohort.
+
+\end{document}
