@@ -1,3 +1,6 @@
+#Author: Adam Zelezny
+#Date: 2026-07-15
+
 import os
 import pandas as pd
 
