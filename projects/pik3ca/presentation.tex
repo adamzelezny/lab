@@ -1,0 +1,628 @@
+\documentclass[10pt, aspectratio=169]{beamer}
+
+% --- Theme & Color Scheme Setup ---
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\definecolor{navyblue}{RGB}{20, 45, 85}
+\definecolor{tealaccent}{RGB}{0, 130, 140}
+\definecolor{lightbg}{RGB}{245, 247, 250}
+
+\setbeamercolor{palette primary}{bg=navyblue, fg=white}
+\setbeamercolor{palette secondary}{bg=tealaccent, fg=white}
+\setbeamercolor{palette tertiary}{bg=navyblue, fg=white}
+\setbeamercolor{titlelike}{bg=navyblue, fg=white}
+\setbeamercolor{frametitle}{bg=navyblue, fg=white}
+\setbeamercolor{block title}{bg=navyblue, fg=white}
+\setbeamercolor{block body}{bg=lightbg, fg=black}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% --- Presentation Info ---
+\title[PIK3CA scRNA-seq]{PIK3CA}
+\author{Adam Železný}
+\date{\today}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+% SLIDE 1: Title Slide
+% -----------------------------------------------------------------------------
+\begin{frame}
+  \vspace{1.5cm}
+  \begin{center}
+    {\Huge \textbf{PIK3CA}}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 2: H1047R vs C420R vs R88Q (control) - Preprocessing & PyDESeq2 Pseudobulk
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs C420R vs R88Q (control)}
+  \begin{itemize}
+    \item 133,198 cells * 31,054 genes
+    \item Values are raw integer UMI counts
+    \item Roughly 54k cells from H1047R, 35k from C420R, 44k from R88Q
+    \item QC filtered out low gene counts, high mitochondrial cells
+    \item To correct sequencing depth differences, data was normalized to a target sum of 10k counts per cell
+    \item Log-normalization was applied using log1p
+    \item Aggregated individual cell counts into sample-level pseudobulk matrices across 10 biological replicates
+    \item Differential expression was modeled using PyDESeq2 (Negative Binomial GLM)
+    \item GSEA Pre-ranked was performed on PyDESeq2 Wald test statistics
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 3: H1047R vs R88Q (tumor)
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs R88Q (tumor)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Mitochondrial Gene Expression (GO:0140053) & -2.607678 & 0.000000 \\
+    Mitochondrial Translation (GO:0032543) & -2.562234 & 0.000000 \\
+    Cell-Cell Adhesion Via Plasma-Membrane Adhesion Molecules (GO:0098742) & 2.311698 & 0.011763 \\
+    Modulation Of Chemical Synaptic Transmission (GO:0050804) & 2.299624 & 0.005882 \\
+    tRNA Modification (GO:0006400) & -2.280792 & 0.002558 \\
+    Regulation Of Mitochondrial Translation (GO:0070129) & -2.229034 & 0.005754 \\
+    Positive Regulation Of Protein Tyrosine Kinase Activity (GO:0061098) & 2.208942 & 0.003921 \\
+    Positive Regulation Of Wound Healing (GO:0090303) & 2.202531 & 0.002941 \\
+    tRNA Processing (GO:0008033) & -2.195943 & 0.004604 \\
+    Synapse Organization (GO:0050808) & 2.191143 & 0.002353 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 4: H1047R vs R88Q (neurons)
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs R88Q (neurons)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Mitochondrial Translation (GO:0032543) & -2.959197 & 0.0 \\
+    Ribosome Biogenesis (GO:0042254) & -2.912074 & 0.0 \\
+    Mitochondrial Gene Expression (GO:0140053) & -2.860500 & 0.0 \\
+    Ribonucleoprotein Complex Biogenesis (GO:0022613) & -2.672916 & 0.0 \\
+    Translation (GO:0006412) & -2.658279 & 0.0 \\
+    Protein Targeting To Mitochondrion (GO:0006626) & -2.636214 & 0.0 \\
+    rRNA Processing (GO:0006364) & -2.634851 & 0.0 \\
+    Ribosomal Small Subunit Biogenesis (GO:0042274) & -2.620662 & 0.0 \\
+    tRNA Modification (GO:0006400) & -2.596417 & 0.0 \\
+    Aerobic Respiration (GO:0009060) & -2.590626 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 5: H1047R vs R88Q (drivers, tumor) - Modulation of Chemical Synaptic Transmission
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs R88Q (drivers, tumor)}
+  \centering
+  {\small \textbf{Modulation of Chemical Synaptic Transmission (2.29 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_H1047R} & \textbf{Mean\_R88Q} & \textbf{Pct\_H1047R} & \textbf{Pct\_R88Q} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Cacng5 & 0.125380 & 0.023071 & 9.775695 & 2.261905 & 2.437040 & 2.688623e-22 \\
+    Clstn2 & 0.006680 & 0.001275 & 0.569133 & 0.119048 & 2.302378 & 2.043533e-02 \\
+    Chrnb4 & 0.007553 & 0.001518 & 0.569133 & 0.178571 & 2.241740 & 4.949118e-02 \\
+    Rims4 & 0.016585 & 0.004079 & 1.406093 & 0.416667 & 1.997302 & 1.428087e-03 \\
+    Syn3 & 0.033421 & 0.009123 & 2.477402 & 1.071429 & 1.861815 & 8.029554e-04 \\
+    Syn1 & 0.031320 & 0.011562 & 2.678273 & 1.130952 & 1.429905 & 4.012263e-04 \\
+    Gria4 & 0.152186 & 0.059353 & 11.282223 & 4.404762 & 1.356969 & 1.676706e-15 \\
+    Dlgap3 & 0.015825 & 0.007062 & 1.238701 & 0.595238 & 1.152917 & 3.438655e-02 \\
+    Slc8a2 & 0.025151 & 0.011507 & 1.908269 & 0.833333 & 1.121375 & 3.957707e-03 \\
+    Gria3 & 0.291576 & 0.137179 & 20.589220 & 10.000000 & 1.087257 & 3.423875e-21 \\
+    Kcnmb4 & 0.119252 & 0.059084 & 9.106127 & 4.583333 & 1.011932 & 1.305487e-08 \\
+    Itgb1 & 1.107782 & 0.557421 & 62.303314 & 37.797619 & 0.990705 & 0.000000e+00 \\
+    Dgkz & 0.208717 & 0.107304 & 16.806160 & 8.988095 & 0.959189 & 5.347457e-14 \\
+    Grm5 & 0.317005 & 0.170591 & 21.392702 & 12.797619 & 0.893574 & 1.263713e-14 \\
+    Grid1 & 0.045280 & 0.024656 & 3.582189 & 2.261905 & 0.874304 & 1.119113e-02 \\
+    Cask & 0.417399 & 0.232800 & 29.829260 & 17.380952 & 0.842062 & 3.475554e-22 \\
+    Cdk15 & 0.075748 & 0.042259 & 5.858721 & 3.630952 & 0.840464 & 6.748437e-04 \\
+    Clstn3 & 0.029864 & 0.017390 & 2.477402 & 1.428571 & 0.776667 & 1.621537e-02 \\
+    Mef2c & 0.198706 & 0.116964 & 13.927017 & 9.464286 & 0.764058 & 2.271651e-06 \\
+    Ppp3ca & 0.674375 & 0.406845 & 44.827586 & 30.357143 & 0.728932 & 6.100956e-30 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 6: H1047R vs R88Q (drivers, tumor) - Synapse organization
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs R88Q (drivers, tumor)}
+  \centering
+  {\small \textbf{Synapse organization (2.19 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_H1047R} & \textbf{Mean\_R88Q} & \textbf{Pct\_H1047R} & \textbf{Pct\_R88Q} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Chrna7 & 0.003710 & 0.000000 & 0.301306 & 0.000000 & 5.251766 & 2.434501e-02 \\
+    Drd1 & 0.009827 & 0.000591 & 0.870439 & 0.059524 & 3.844879 & 4.555402e-04 \\
+    Pcdhb13 & 0.002846 & 0.000480 & 0.234349 & 0.059524 & 2.345343 & 1.656608e-01 \\
+    L1cam & 0.037852 & 0.008084 & 2.745229 & 0.714286 & 2.213371 & 1.986600e-06 \\
+    Pcdhb11 & 0.024052 & 0.006234 & 2.042183 & 0.476190 & 1.930978 & 2.129982e-05 \\
+    Wnt7b & 0.163201 & 0.042823 & 12.453967 & 3.630952 & 1.927706 & 8.029761e-24 \\
+    Pou4f1 & 0.005165 & 0.001417 & 0.468698 & 0.178571 & 1.794975 & 1.136674e-01 \\
+    C5ar1 & 0.008461 & 0.002571 & 0.736525 & 0.297619 & 1.680290 & 5.732593e-02 \\
+    Pcdhb6 & 0.023310 & 0.007842 & 1.908269 & 0.714286 & 1.559494 & 1.147597e-03 \\
+    Pcdhb9 & 0.045142 & 0.017743 & 3.347841 & 1.309524 & 1.342310 & 2.836752e-05 \\
+    Elfn1 & 0.043855 & 0.017466 & 3.615668 & 1.250000 & 1.323269 & 2.352226e-06 \\
+    Cacnb3 & 0.047473 & 0.020604 & 3.850017 & 1.785714 & 1.200224 & 8.893122e-05 \\
+    Slc8a2 & 0.025151 & 0.011507 & 1.908269 & 0.833333 & 1.121375 & 3.957707e-03 \\
+    Pcdhb10 & 0.028324 & 0.013042 & 2.209575 & 1.130952 & 1.112979 & 7.801732e-03 \\
+    Flrt3 & 0.082600 & 0.038675 & 6.059592 & 3.154762 & 1.092758 & 9.796044e-06 \\
+    Ntng1 & 0.055353 & 0.026726 & 4.218279 & 2.440476 & 1.047624 & 1.409827e-03 \\
+    Pcdhb3 & 0.020986 & 0.010208 & 1.740877 & 0.833333 & 1.032588 & 1.146364e-02 \\
+    Cx3cl1 & 0.101575 & 0.049809 & 7.700033 & 4.166667 & 1.026590 & 1.654906e-06 \\
+    Slitrk3 & 0.040874 & 0.020148 & 3.247405 & 1.904762 & 1.016919 & 6.290572e-03 \\
+    Adgrl3 & 0.411973 & 0.211727 & 29.159692 & 16.130952 & 0.960012 & 3.029048e-25 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 7: C420R vs R88Q (tumor)
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs R88Q (tumor)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Striated Muscle Contraction (GO:0006941) & 2.812924 & 0.000000 \\
+    Skeletal Muscle Contraction (GO:0003009) & 2.585091 & 0.000000 \\
+    Response To Type II Interferon (GO:0034341) & -2.509336 & 0.000000 \\
+    Muscle Contraction (GO:0006936) & 2.427666 & 0.000000 \\
+    Myofibril Assembly (GO:0030239) & 2.380260 & 0.000000 \\
+    Regulation Of Muscle Contraction (GO:0006937) & 2.344999 & 0.000000 \\
+    Ribonucleoprotein Complex Biogenesis (GO:0022613) & -2.341127 & 0.000000 \\
+    Ribosome Biogenesis (GO:0042254) & -2.326522 & 0.000000 \\
+    T Cell Receptor Signaling Pathway (GO:0050852) & -2.315842 & 0.000000 \\
+    Skeletal Muscle Organ Development (GO:0060538) & 2.279752 & 0.000000 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 8: C420R vs R88Q (neurons)
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs R88Q (neurons)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Muscle Contraction (GO:0006936) & 2.824512 & 0.0 \\
+    Myofibril Assembly (GO:0030239) & 2.740327 & 0.0 \\
+    Striated Muscle Contraction (GO:0006941) & 2.709227 & 0.0 \\
+    Sarcomere Organization (GO:0045214) & 2.570762 & 0.0 \\
+    Sister Chromatid Segregation (GO:0000819) & -2.492418 & 0.0 \\
+    Skeletal Muscle Tissue Development (GO:0007519) & 2.470435 & 0.0 \\
+    Actomyosin Structure Organization (GO:0031032) & 2.450412 & 0.0 \\
+    Negative Regulation Of Mitotic Metaphase/Anaphase Transition (GO:0045841) & -2.446849 & 0.0 \\
+    Heart Contraction (GO:0060047) & 2.405880 & 0.0 \\
+    Mitotic Nuclear Division (GO:0140014) & -2.356067 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 9: C420R vs R88Q (drivers, tumor) - Striated Muscle Contraction
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs R88Q (drivers, tumor)}
+  \centering
+  {\small \textbf{Striated Muscle Contraction (2.81 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_C420R} & \textbf{Mean\_R88Q} & \textbf{Pct\_C420R} & \textbf{Pct\_R88Q} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Myh3 & 0.019042 & 0.000000 & 0.604839 & 0.000000 & 7.580612 & 1.430000e-03 \\
+    Klhl41 & 0.009902 & 0.000000 & 0.604839 & 0.000000 & 6.644146 & 1.430000e-03 \\
+    Lmod3 & 0.008088 & 0.000000 & 0.403226 & 0.000000 & 6.355452 & 9.254000e-03 \\
+    Chrna1 & 0.006700 & 0.000000 & 0.403226 & 0.000000 & 6.087372 & 9.254000e-03 \\
+    Ttn & 0.021281 & 0.000425 & 1.008065 & 0.059524 & 5.346743 & 3.990000e-04 \\
+    Tnnc2 & 0.030623 & 0.001666 & 1.008065 & 0.119048 & 4.120489 & 2.127000e-03 \\
+    Myh8 & 0.007379 & 0.000539 & 0.403226 & 0.059524 & 3.549412 & 6.985000e-02 \\
+    Pgam2 & 0.007790 & 0.000702 & 0.403226 & 0.059524 & 3.298421 & 6.985000e-02 \\
+    Tnni1 & 0.019178 & 0.002040 & 1.008065 & 0.297619 & 3.171066 & 3.947200e-02 \\
+    Tnnt3 & 0.021959 & 0.003462 & 1.008065 & 0.178571 & 2.630403 & 7.331000e-03 \\
+    Tnnc1 & 0.007534 & 0.001578 & 0.201613 & 0.178571 & 2.185821 & 9.153160e-01 \\
+    Tnnt1 & 0.017777 & 0.004249 & 0.806452 & 0.357143 & 2.039224 & 1.921640e-01 \\
+    Myl4 & 0.048888 & 0.018445 & 2.620968 & 1.666667 & 1.401427 & 1.637450e-01 \\
+    Jsrp1 & 0.014521 & 0.006563 & 1.008065 & 0.654762 & 1.133914 & 4.140690e-01 \\
+    Casq2 & 0.020794 & 0.014447 & 1.411290 & 1.071429 & 0.522357 & 5.297920e-01 \\
+    Ryr1 & 0.009606 & 0.007635 & 1.008065 & 0.773810 & 0.327430 & 6.146800e-01 \\
+    Tpm1 & 0.688493 & 0.579529 & 38.709677 & 35.892857 & 0.248523 & 7.169300e-02 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 10: C420R vs R88Q (drivers, neurons) - Muscle Contraction
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs R88Q (drivers, neurons)}
+  \centering
+  {\small \textbf{Muscle Contraction (2.82 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_C420R} & \textbf{Mean\_R88Q} & \textbf{Pct\_C420R} & \textbf{Pct\_R88Q} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Klhl41 & 0.016614 & 0.000091 & 1.419739 & 0.014652 & 6.451476 & 3.261150e-22 \\
+    Myot & 0.005155 & 0.000000 & 0.457980 & 0.000000 & 5.715496 & 2.199784e-08 \\
+    Myh8 & 0.012285 & 0.000163 & 0.526677 & 0.014652 & 5.557675 & 1.114111e-08 \\
+    Lmod3 & 0.008200 & 0.000085 & 0.549576 & 0.014652 & 5.485297 & 4.985675e-09 \\
+    Chrnd & 0.003425 & 0.000000 & 0.503778 & 0.000000 & 5.139492 & 4.381921e-09 \\
+    Smpx & 0.006555 & 0.000128 & 0.480879 & 0.014652 & 4.867846 & 5.570219e-08 \\
+    Tnnt2 & 0.022832 & 0.000720 & 0.938860 & 0.131868 & 4.805148 & 4.054340e-10 \\
+    Lmod2 & 0.002544 & 0.000000 & 0.251889 & 0.000000 & 4.724480 & 3.354836e-05 \\
+    Myh4 & 0.002335 & 0.000000 & 0.228990 & 0.000000 & 4.605790 & 7.664007e-05 \\
+    Myh3 & 0.016612 & 0.000731 & 0.686970 & 0.087912 & 4.330668 & 4.684974e-08 \\
+    Hrc & 0.007178 & 0.000266 & 0.595374 & 0.043956 & 4.315115 & 2.153968e-08 \\
+    Trdn & 0.005754 & 0.000207 & 0.457980 & 0.014652 & 4.254912 & 1.252166e-07 \\
+    Pgam2 & 0.008974 & 0.000416 & 0.572475 & 0.029304 & 4.137073 & 1.105934e-08 \\
+    Ckmt2 & 0.003183 & 0.000110 & 0.503778 & 0.029304 & 3.967952 & 1.198143e-07 \\
+    Myh2 & 0.001170 & 0.000000 & 0.160293 & 0.000000 & 3.667233 & 9.382600e-04 \\
+    Myom2 & 0.004307 & 0.000299 & 0.457980 & 0.014652 & 3.465613 & 1.254357e-07 \\
+    Ttn & 0.042118 & 0.004122 & 2.862377 & 0.483516 & 3.321918 & 2.043953e-25 \\
+    Myl1 & 0.029068 & 0.002967 & 1.144951 & 0.380952 & 3.249278 & 1.449390e-06 \\
+    Sgca & 0.002328 & 0.000354 & 0.343485 & 0.043956 & 2.417437 & 1.149006e-04 \\
+    Casq2 & 0.012801 & 0.002616 & 0.915961 & 0.263736 & 2.247858 & 2.657837e-06 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 11: H1047R vs C420R (tumor)
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs C420R (tumor)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8.5cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Striated Muscle Contraction (GO:0006941) & -2.762760 & 0.0 \\
+    Skeletal Muscle Contraction (GO:0003009) & -2.498387 & 0.0 \\
+    Muscle Contraction (GO:0006936) & -2.420036 & 0.0 \\
+    Mitochondrial ATP Synthesis Coupled Electron Transport (GO:0042775) & -2.363257 & 0.0 \\
+    Sarcomere Organization (GO:0045214) & -2.335739 & 0.0 \\
+    Granulocyte Chemotaxis (GO:0071621) & 2.332255 & 0.0 \\
+    Cellular Respiration (GO:0045333) & -2.330149 & 0.0 \\
+    Lymphocyte Chemotaxis (GO:0048247) & 2.320362 & 0.0 \\
+    Regulation Of Chemokine Production (GO:0032642) & 2.320353 & 0.0 \\
+    Neutrophil Chemotaxis (GO:0030593) & 2.312415 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 12: H1047R vs C420R (neurons)
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs C420R (neurons)}
+  \centering
+  {\small \textbf{TOP 10 MOST CHANGED PATHWAYS (by Absolute NES):}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{8.5cm} r r}
+    \toprule
+    \textbf{Term} & \textbf{NES} & \textbf{FDR q-val} \\
+    \midrule
+    Aerobic Respiration (GO:0009060) & -3.013038 & 0.0 \\
+    Oxidative Phosphorylation (GO:0006119) & -2.974999 & 0.0 \\
+    Aerobic Electron Transport Chain (GO:0019646) & -2.900314 & 0.0 \\
+    Proton Motive Force-Driven Mitochondrial ATP Synthesis (GO:0042776) & -2.822391 & 0.0 \\
+    Mitochondrial ATP Synthesis Coupled Electron Transport (GO:0042775) & -2.816890 & 0.0 \\
+    Cellular Respiration (GO:0045333) & -2.785673 & 0.0 \\
+    Mitochondrial Gene Expression (GO:0140053) & -2.760228 & 0.0 \\
+    Proton Motive Force-Driven ATP Synthesis (GO:0015986) & -2.738195 & 0.0 \\
+    Mitochondrial Respiratory Chain Complex I Assembly (GO:0032981) & -2.723724 & 0.0 \\
+    NADH Dehydrogenase Complex Assembly (GO:0010257) & -2.723724 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 13: H1047R vs C420R (drivers, tumor) - Granulocyte Chemotaxis
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs C420R (drivers, tumor)}
+  \centering
+  {\small \textbf{Granulocyte Chemotaxis (2.33 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_H1047R} & \textbf{Mean\_C420R} & \textbf{Pct\_H1047R} & \textbf{Pct\_C420R} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Pik3cg & 0.014953 & 0.000000 & 1.339136 & 0.000000 & 7.233904 & 9.553000e-03 \\
+    Ccl24 & 0.013575 & 0.000000 & 0.803482 & 0.000000 & 7.095357 & 4.520400e-02 \\
+    Ccl22 & 0.010361 & 0.000000 & 0.569133 & 0.000000 & 6.708867 & 9.221700e-02 \\
+    Pik3cd & 0.030891 & 0.003900 & 2.611316 & 0.604839 & 2.953845 & 5.804000e-03 \\
+    Itgb2 & 0.044890 & 0.010409 & 3.783060 & 1.008065 & 2.097955 & 1.518000e-03 \\
+    Pip5k1c & 0.103411 & 0.026608 & 8.302645 & 2.419355 & 1.954462 & 3.000000e-06 \\
+    Ccl3 & 0.081981 & 0.026140 & 5.323067 & 2.016129 & 1.645300 & 1.401000e-03 \\
+    Nckap1l & 0.030471 & 0.010642 & 2.678273 & 1.008065 & 1.508948 & 2.530600e-02 \\
+    Ccl1 & 0.010711 & 0.004450 & 0.703047 & 0.201613 & 1.248507 & 1.929100e-01 \\
+    Ccl4 & 0.178306 & 0.075110 & 10.277871 & 5.241935 & 1.246159 & 2.890000e-04 \\
+    Ccl7 & 0.083830 & 0.039432 & 4.954804 & 2.620968 & 1.086160 & 2.109900e-02 \\
+    Cx3cl1 & 0.101575 & 0.057157 & 7.700033 & 4.233871 & 0.828451 & 5.976000e-03 \\
+    Fcer1g & 0.287868 & 0.171250 & 16.739203 & 9.879032 & 0.748959 & 1.010000e-04 \\
+    Cxcl9 & 0.115547 & 0.074825 & 6.963509 & 4.032258 & 0.626220 & 1.640700e-02 \\
+    Ccl19 & 0.004835 & 0.006980 & 0.368262 & 0.403226 & -0.520696 & 9.038920e-01 \\
+    Cxcl1 & 0.043303 & 0.034479 & 2.544359 & 1.612903 & 0.327888 & 2.182010e-01 \\
+    Ccl2 & 0.175952 & 0.140624 & 10.847004 & 8.266129 & 0.323132 & 8.862500e-02 \\
+    Bsg & 1.523626 & 1.343172 & 76.699029 & 68.145161 & 0.181852 & 3.570000e-04 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 14: H1047R vs C420R (drivers, neurons) - Aerobic Respiration
+% -----------------------------------------------------------------------------
+\begin{frame}{H1047R vs C420R (drivers, neurons)}
+  \centering
+  {\small \textbf{Aerobic Respiration (-3.01 NES):}}\par
+  \vspace{0.15cm}
+  \tiny
+  \begin{tabular}{l r r r r r r}
+    \toprule
+    \textbf{Gene} & \textbf{Mean\_H1047R} & \textbf{Mean\_C420R} & \textbf{Pct\_H1047R} & \textbf{Pct\_C420R} & \textbf{Log2FoldChange} & \textbf{PValue} \\
+    \midrule
+    Bloc1s1 & 0.044266 & 0.103788 & 4.385608 & 13.853904 & -1.227509 & 0.000000e+00 \\
+    Sirt3 & 0.086743 & 0.152307 & 8.024440 & 19.532860 & -0.811450 & 0.000000e+00 \\
+    Ndufv1 & 0.378578 & 0.586967 & 30.414121 & 53.629494 & -0.632556 & 0.000000e+00 \\
+    Chchd10 & 0.151208 & 0.218696 & 10.821453 & 16.418594 & -0.532096 & 4.758776e-17 \\
+    Surf1 & 0.168473 & 0.241629 & 14.758995 & 28.119991 & -0.520017 & 0.000000e+00 \\
+    Ndufb2 & 0.374275 & 0.534499 & 29.911745 & 50.606824 & -0.513971 & 0.000000e+00 \\
+    Ndufa3 & 0.301354 & 0.413659 & 25.010183 & 42.729563 & -0.456852 & 0.000000e+00 \\
+    Ndufs8 & 0.669098 & 0.898932 & 47.617108 & 70.002290 & -0.425939 & 0.000000e+00 \\
+    Ndufv3 & 0.601091 & 0.803075 & 43.489477 & 64.621021 & -0.417892 & 0.000000e+00 \\
+    Tefm & 0.047405 & 0.062392 & 4.331297 & 8.037554 & -0.395589 & 1.013253e-15 \\
+    Ndufb3 & 0.738013 & 0.951719 & 50.984386 & 71.376231 & -0.366846 & 0.000000e+00 \\
+    Slc25a14 & 0.083219 & 0.107152 & 7.549219 & 13.808106 & -0.364291 & 3.385219e-24 \\
+    Nipsnap2 & 0.130956 & 0.166525 & 11.866938 & 19.670254 & -0.346424 & 9.832012e-25 \\
+    Uqcrc2 & 0.589902 & 0.745937 & 43.408011 & 62.651706 & -0.338528 & 5.724433e-38 \\
+    Slc25a51 & 0.183354 & 0.229275 & 16.252546 & 26.631555 & -0.22288 & 2.014241e-29 \\
+    Ndufa11 & 0.963478 & 1.191740 & 61.805838 & 80.238150 & -0.306717 & 4.060402e-41 \\
+    Ndufa5 & 0.684484 & 0.845517 & 47.739308 & 66.956721 & -0.304777 & 4.547470e-33 \\
+    Ndufs1 & 0.288722 & 0.354532 & 24.127631 & 38.035264 & -0.296141 & 6.511788e-33 \\
+    Ndufs7 & 0.963937 & 1.182516 & 61.575017 & 79.047401 & -0.294821 & 4.302766e-38 \\
+    Ndufb4 & 0.786370 & 0.961468 & 53.346911 & 71.742615 & -0.289996 & 1.894146e-30 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 15: Key takeaways
+% -----------------------------------------------------------------------------
+\begin{frame}{Key takeaways}
+  \begin{itemize}
+    \item H1047R and C420R seem to attack the brain differently
+    \item In H1047R, tumor cells upregulate synaptogenesis, cell adhesion, and synaptic transmission
+    \item Neurons exposed to H1047R seem to suffer a metabolic collapse
+    \item Excitotoxic over-firing triggers mitochondrial translation shutdown
+    \item In C420R, tumor cells hijack muscle-like contractile networks
+    \item Key tumor drivers include structural contractile machinery
+    \item Neurons adapt to physical pressure via cytoskeletal remodeling
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 16: Machine Learning & SHAP Analysis
+% -----------------------------------------------------------------------------
+\begin{frame}{Machine Learning \& SHAP Analysis}
+  \begin{itemize}
+    \item Data preprocessing was performed similarly to GSEA
+    \item Classifier and feature analysis were used to determine top drivers of prediction
+    \item K-Means clustering was used to predict whether a cell is a tumor cell or a neuron
+    \item Random Forests were used to classify mutations states across cell populations (tumor cells and neurons)
+    \item SHAP (SHapley Additive exPlanations) was used to extract feature importances
+    \item Besides the shared data, GSEA and the ML approach are generally independent
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 17: C420R vs H1047R (SHAP drivers, tumor)
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs H1047R (SHAP drivers, tumor)}
+  \centering
+  {\small \textbf{Top Random Forest SHAP Drivers in Malignant Tumor Cells:}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{l r r p{6.5cm}}
+    \toprule
+    \textbf{Gene} & \textbf{SHAP (H1047R)} & \textbf{SHAP (C420R)} & \textbf{Biological Role / Pathway} \\
+    \midrule
+    Xist & 0.028019 & 0.009505 & High H1047R driver (X-inactivation / cell state) \\
+    EGFP & 0.022782 & 0.006460 & Transgene expression marker \\
+    Slc1a2 & 0.012173 & 0.005183 & Glutamate transporter / Synaptic transmission \\
+    Cdkn2a & 0.011225 & 0.002100 & Cell cycle inhibitor / Tumor suppression \\
+    Rpl12 & 0.011087 & 0.005139 & Ribosomal protein subunit / Translation \\
+    Mt3 & 0.010430 & 0.006192 & Metallothionein 3 / Heavy metal homeostasis \\
+    Egr1 & 0.010393 & 0.005320 & Immediate early gene / Excitotoxic response \\
+    Gm42418 & 0.010266 & 0.018638 & Top C420R driver (lncRNA feature) \\
+    Malat1 & 0.003500 & 0.007971 & C420R driver (Nuclear lncRNA) \\
+    H2-Eb1 & 0.003200 & 0.007871 & C420R driver (MHC class II antigen presentation) \\
+    Mbp & 0.003100 & 0.007735 & C420R driver (Myelin basic protein) \\
+    Fxyd1 & 0.002900 & 0.005500 & C420R driver (Na/K ATPase regulator) \\
+    Tmsb4x & 0.002800 & 0.005232 & C420R driver (Thymosin beta-4 / Actomyosin) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 18: C420R vs H1047R (SHAP drivers, neurons)
+% -----------------------------------------------------------------------------
+\begin{frame}{C420R vs H1047R (SHAP drivers, neurons)}
+  \centering
+  {\small \textbf{Top Random Forest SHAP Drivers in Neurons:}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{l r r p{6.5cm}}
+    \toprule
+    \textbf{Gene} & \textbf{SHAP (H1047R)} & \textbf{SHAP (C420R)} & \textbf{Biological Role / Pathway} \\
+    \midrule
+    EGFP & 0.021602 & 0.005568 & Transgene expression marker \\
+    Gm42418 & 0.013763 & 0.015862 & Shared high driver (lncRNA feature) \\
+    Met & 0.013184 & 0.005766 & H1047R driver (HGF receptor tyrosine kinase) \\
+    Ttr & 0.012977 & 0.004381 & H1047R driver (Transthyretin transport) \\
+    H2-Eb1 & 0.011031 & 0.010624 & Shared immune / MHC class II feature \\
+    Egr1 & 0.007917 & 0.003100 & H1047R neuronal driver (Excitotoxicity) \\
+    Gpnmb & 0.006995 & 0.003200 & H1047R neuronal driver (Transmembrane glycoprotein) \\
+    Fos & 0.004758 & 0.002800 & H1047R neuronal driver (Excitotoxic stress) \\
+    Cd74 & 0.004995 & 0.008232 & C420R driver (MHC class II invariant chain) \\
+    Xist & 0.005081 & 0.007220 & C420R driver (X-inactivation transcript) \\
+    Mbp & 0.002500 & 0.006906 & C420R driver (Myelin sheath structural gene) \\
+    Csrp1 & 0.004365 & 0.004739 & C420R driver (Cysteine and glycine-rich protein 1) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 19: Cross-Validation: GSEA vs. ML/SHAP Synthesis
+% -----------------------------------------------------------------------------
+\begin{frame}{Cross-Validation: GSEA vs. ML/SHAP Synthesis}
+  \begin{block}{What is Consistent (Pathway \& Single-Cell Convergence)}
+    \begin{itemize}
+      \item \textbf{H1047R Synaptic Axis}: GSEA synaptic pathways (\emph{Synaptic Transmission} NES +2.30) match SHAP single-cell drivers (\emph{Slc1a2}, \emph{Egr1}, \emph{Fos}).
+      \item \textbf{C420R Actomyosin Axis}: GSEA muscle contractility (\emph{Striated Muscle Contraction} NES +2.81) aligns with SHAP cytoskeletal drivers (\emph{Tmsb4x}, \emph{Csrp1}).
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{What is Not Consistent (Complementary Differences)}
+    \begin{itemize}
+      \item \textbf{Single-Cell Immune Markers}: SHAP highlights antigen presentation (\emph{Cd74}, \emph{H2-Eb1}) as top C420R drivers, which are masked in pseudobulk GSEA.
+      \item \textbf{Non-Coding / Transgene Features}: SHAP uncovers strong single-cell predictive power for lncRNAs (\emph{Xist}, \emph{Gm42418}), which are excluded from GO pathway databases.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 20: ANLS Project Setup & Biological Scope
+% -----------------------------------------------------------------------------
+\begin{frame}{ANLS Project Setup \& Biological Scope}
+  \begin{block}{Testing ANLS-like Shuttle Capability in Glioblastoma Microenvironment}
+    \begin{itemize}
+      \item \textbf{Experimental Model}: Single-cell RNA-seq of 46,960 Glioblastoma microenvironment cells across Chemogenetic Activity (CNO, 30,996 cells) vs. Control (Saline, 14,258 cells).
+      \item \textbf{Cell Composition}: Composed almost entirely of GBM tumor cells and microglia (very few astrocytes).
+      \item \textbf{Core Hypothesis}: Evaluates whether GBM microenvironment cells possess the intrinsic capacity to engage an Astrocyte-Neuron Lactate Shuttle (ANLS)-like metabolic program during active stimulation.
+      \item \textbf{Statistical Evaluation}: Single-cell rank-sum significance testing across Glycolysis, TCA cycle, Glutamate clearance, and Lactate importer gene sets.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 21: ANLS Quantitative Results (Glycolysis, TCA & Shuttle Genes)
+% -----------------------------------------------------------------------------
+\begin{frame}{ANLS Quantitative Results (Glycolysis, TCA \& Shuttle Genes)}
+  \centering
+  {\small \textbf{Single-Cell Expression Shifts During Activity Stimulation in GBM:}}\par
+  \vspace{0.10cm}
+  \tiny
+  \begin{tabular}{l r r r r l p{4.0cm}}
+    \toprule
+    \textbf{Gene} & \textbf{Ctrl Mean} & \textbf{Act Mean} & \textbf{Ctrl Pct\%} & \textbf{Act Pct\%} & \textbf{P-Value} & \textbf{Biological Direction} \\
+    \midrule
+    \multicolumn{7}{l}{\textbf{Glucose Trapping \& Glycolysis}} \\
+    Hk2 & 0.145 & 0.246 & 13.9\% & 16.4\% & $9.67 \times 10^{-11}$ & Upregulated tumor hexokinase entry \\
+    Pfkp & 0.414 & 0.078 & 33.4\% & 4.8\% & $< 10^{-300}$ & Contracted rate-limiting glycolysis \\
+    Pkm & 1.142 & 0.781 & 67.7\% & 43.8\% & $1.84 \times 10^{-282}$ & Reduced lower glycolytic flux \\
+    \midrule
+    \multicolumn{7}{l}{\textbf{TCA Cycle \& Mitochondrial Metabolism}} \\
+    Cs & 0.151 & 0.112 & 15.5\% & 8.0\% & $5.02 \times 10^{-32}$ & Downregulated entry synthase \\
+    Idh2 & 0.185 & 0.365 & 17.9\% & 23.3\% & $1.40 \times 10^{-42}$ & \textbf{Doubled}: Mitochondrial NADPH redox balance \\
+    Idh3a & 0.248 & 0.183 & 22.5\% & 12.0\% & $7.17 \times 10^{-57}$ & Downregulated NAD+-dependent TCA step \\
+    Sdhb & 0.769 & 0.581 & 56.0\% & 35.9\% & $7.20 \times 10^{-130}$ & Downregulated Complex II subunit \\
+    Mdh2 & 0.691 & 0.484 & 51.0\% & 30.2\% & $3.70 \times 10^{-174}$ & Downregulated malate oxidation \\
+    \midrule
+    \multicolumn{7}{l}{\textbf{Glutamate Clearance \& Lactate Shuttle}} \\
+    Slc1a2 & 0.039 & 0.229 & 2.8\% & 9.5\% & $1.25 \times 10^{-31}$ & \textbf{5.8x Jump}: Massive glutamate uptake \\
+    Glul & 0.483 & 1.618 & 34.4\% & 69.7\% & $< 10^{-300}$ & \textbf{3.3x Jump}: Active glutamine synthesis \\
+    Slc16a7 & 0.0040 & 0.150 & 3.9\% & 10.5\% & $1.57 \times 10^{-31}$ & \textbf{3.8x Jump}: Upregulated MCT2 lactate import \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 22: ANLS Mechanistic Reasoning & Chain-of-Thought Interpretation
+% -----------------------------------------------------------------------------
+\begin{frame}{ANLS Mechanistic Reasoning \& Biological Interpretation}
+  \begin{block}{Chain-of-Thought Breakdown of the ANLS Findings}
+    \begin{itemize}
+      \item \textbf{1. Hexokinase Isoform Switch}: Activity triggers a switch from baseline \emph{Hk1}/\emph{Hk3} to \emph{Hk2} ($0.145 \rightarrow 0.246$), driving aggressive glucose entry into GBM microenvironment cells.
+      \item \textbf{2. Glycolytic Contracting vs. Funneling}: Downstream rate-limiting \emph{Pfkp} collapses ($33.4\% \rightarrow 4.8\%$), showing glucose carbon is funneled into lactate export or pentose phosphate pathways rather than complete intracellular glycolytic oxidation.
+      \item \textbf{3. TCA Tuning \& Redox Switch}: Classical NAD+-dependent OxPhos (\emph{Cs}, \emph{Idh3a}, \emph{Sdhb}, \emph{Mdh2}) contracts to prevent mitochondrial damage. Crucially, mitochondrial \emph{Idh2} doubles ($0.185 \rightarrow 0.365$), producing protective NADPH against activity ROS.
+      \item \textbf{4. Shuttle Program Confirmation}: \emph{Slc1a2} (glutamate import, 5.8x jump), \emph{Glul} (glutamine conversion, 3.3x jump), and \emph{Slc16a7} (MCT2 lactate import, 3.8x jump) prove that GBM cells DO activate an ANLS-like shuttle program upon stimulation.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 23: Integrated Theory: The 5-Step Ruptured Shuttle Cascade
+% -----------------------------------------------------------------------------
+\begin{frame}{Integrated Theory: The 5-Step Ruptured Shuttle Cascade}
+  \begin{block}{Empirical Data Supporting the 5-Step Cross-Project Model}
+    \begin{enumerate}
+      \item \textbf{Tumor Hijacks Glutamate}: \emph{H1047R} tumor cells express glutamate transporter \emph{Slc1a2} (SHAP = 0.012173) and synaptogenesis (\emph{Syn3}, NES +2.30). ANLS data proves active glutamate clearance (\emph{Slc1a2} 5.8x jump; \emph{Glul} 3.3x jump).
+      \item \textbf{Neurons Become Hyperactive}: Tumor-neuron synaptic wiring drives chronic over-firing (\emph{Modulation of Chemical Synaptic Transmission} GSEA NES = +2.30, \emph{Gria3}, \emph{Gria4}).
+      \item \textbf{Excitotoxic Stress}: Host neurons upregulate top Machine Learning SHAP drivers of excitotoxic overload: \emph{Egr1} (SHAP = 0.007917) and \emph{Fos} (SHAP = 0.004758).
+      \item \textbf{Mitochondrial Collapse}: Chronic excitotoxicity forces total neuronal respiratory failure: \emph{Aerobic Respiration} GSEA NES = -3.01 (FDR q-val = 0.0) and \emph{Mitochondrial Translation} NES = -2.96.
+      \item \textbf{Neuron Cannot Use Lactate}: Neuronal lactate import (\emph{Slc16a7}/MCT2) is active (3.8x jump in ANLS), but host neurons lack functional mitochondrial TCA/OxPhos engines to burn it, rupturing the shuttle loop.
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 24: ANLS vs. PIK3CA Integrated Comparative Matrix
+% -----------------------------------------------------------------------------
+\begin{frame}{ANLS vs. PIK3CA Integrated Comparative Matrix}
+  \centering
+  {\small \textbf{Cross-Project Glioblastoma Integration Matrix:}}\par
+  \vspace{0.15cm}
+  \scriptsize
+  \begin{tabular}{p{2.8cm} p{3.6cm} p{3.8cm} p{3.8cm}}
+    \toprule
+    \textbf{Biological Axis} & \textbf{ANLS Project (Stimulation Baseline)} & \textbf{PIK3CA H1047R (Synaptic Overload)} & \textbf{PIK3CA C420R (Biomechanical Invasion)} \\
+    \midrule
+    \textbf{Glutamate \& Synaptic State} & Clearance via \emph{Slc1a2} (5.8x jump) responding to active firing in GBM microenvironment & Tumor synaptogenesis (NES +2.30) driving excitotoxicity (\emph{Egr1}, \emph{Fos}) & Uncoupled from synaptogenesis; minimal synaptic driver activity \\
+    \addlinespace
+    \textbf{Lactate Shuttle Integrity} & Engagement: \emph{Hk2} glycolysis fuels lactate export; \emph{Slc16a7} (3.8x jump) import & \textbf{Ruptured}: Neurons lose capacity to utilize imported lactate & Independent: Bypasses lactate shuttle for direct tumor energy \\
+    \addlinespace
+    \textbf{Mitochondrial Health} & Rebalanced: Controlled TCA tuning; \emph{Idh2} (2x jump) redox protection & \textbf{Total Collapse}: Severe neuronal respiratory failure (NES -3.01) & \textbf{Hyper-Active}: Upregulated electron transport (NES +2.12) to fuel movement \\
+    \addlinespace
+    \textbf{Primary Tumor Strategy} & Tests ANLS-like capability in GBM & Microenvironmental synaptic hijacking \& neuronal metabolic decay & Biomechanical tissue invasion via actomyosin contractility (NES +2.81) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\end{document}
